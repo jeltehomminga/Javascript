@@ -4,65 +4,27 @@ async function getData() {
   return Dinos;
 }
 
-// Create Dino Constructor
-class Dino {
-  constructor({ species, weight, height, diet, where, when, fact }) {
-    this.species = species;
-    this.weight = weight;
-    this.height = height;
-    this.diet = diet;
-    this.where = where;
-    this.when = when;
-    this.fact = fact;
-  }
+// Create Creature Constructor
+function Creature({ weight, height, diet }) {
+  this.weight = weight;
+  this.height = height;
+  this.diet = diet;
 }
 
-// Create Dino Objects
-const dinoObjects = async () => {
-  const Dinos = await getData();
-  console.log(Dinos.map((dino) => new Dino(dino)));
-};
+// Create Dino Constructor
+function Dino({ species, weight, height, diet, where, when, fact }) {
+  Creature.call(this, { weight, height, diet });
+  this.species = species;
+  this.where = where;
+  this.when = when;
+  this.fact = fact;
+}
 
-// Use IIFE to get human data from form
-const iife = (function () {
-  return async function () {
-    const dinos = await getData();
-    const name = document.getElementById("name").value;
-    const heightMeterValue = document.getElementById("meter").value;
-    const heightCentiMeterValue = document.getElementById("centimeter").value;
-    const height = heightMeterValue * 100 + heightCentiMeterValue;
-    const weight = document.getElementById("weight").value;
-    const diet = document.getElementById("diet").value.toLowerCase();
-
-    const dinoObjects = dinos.map((dino) => new Dino(dino));
-
-    let dinoHtml = "";
-
-    dinoObjects.forEach((dino, i) => {
-      const OptionOne = dino.compareWeight(weight);
-      const OptionTwo = dino.compareHeight(height);
-      const OptionThree = dino.compareDiet(diet);
-
-      const compareRandom = [OptionOne, OptionTwo, OptionThree][
-        Math.floor(Math.random() * 3)
-      ];
-
-      if (i !== 4) {
-        dinoHtml += addTile(dino, compareRandom);
-      } else {
-        dinoHtml +=
-          `<div class="grid-item">
-        <h3>Human</h3>
-        <h4>${name}</h4>
-          <img src="images/human.png"> 
-          </div>` + addTile(dino, compareRandom);
-      }
-    });
-
-    addTilesToDom(dinoHtml);
-    removeFormFromScreen();
-  };
-})();
+//Create Human Constructor
+function Human({ name, weight, height, diet }) {
+  Creature.call(this, { weight, height, diet });
+  this.name = name;
+}
 
 // Create Dino Compare Method 1
 // NOTE: Weight in JSON file is in lbs, height in inches.
@@ -87,12 +49,32 @@ Dino.prototype.compareDiet = function (diet) {
 // Generate Tiles for each Dino in Array
 const grid = document.getElementById("grid");
 
-const addTile = (dino, compareText) => {
+const addDinoTile = (dino, compareText) => {
   return `<div class="grid-item">
-  <h3>${dino.species}</h3>
-  <h4>${dino.fact}</h4>
+    <h3>${dino.species}</h3>
+    <h4>${dino.fact}</h4>
     <img src="images/${dino.species.toLowerCase()}.png"> 
     <h4>${compareText}</h4>
+    </div>`;
+};
+
+// Create human object from user input
+const createHuman = () => {
+  const name = document.getElementById("name").value,
+    heightMeterValue = document.getElementById("meter").value,
+    heightCentiMeterValue = document.getElementById("centimeter").value,
+    height = heightMeterValue * 100 + heightCentiMeterValue,
+    weight = document.getElementById("weight").value,
+    diet = document.getElementById("diet").value.toLowerCase();
+  return new Human({ name, weight, height, diet });
+};
+
+// Generate Tile for human
+const addHumanTile = ({ name }) => {
+  return `<div class="grid-item">
+    <h3>Human</h3>
+    <h4>${name}</h4>
+    <img src="images/human.png"> 
     </div>`;
 };
 
@@ -107,6 +89,32 @@ const removeFormFromScreen = () => {
   const form = document.getElementById("dino-compare");
   form.parentNode.removeChild(form);
 };
+
+// Use IIFE to get human data from form
+const iife = (function () {
+  return async function () {
+    const dinos = await getData();
+    const dinoObjects = dinos.map((dino) => new Dino(dino));
+    const human = createHuman();
+
+    let dinoHtml = "";
+
+    dinoObjects.forEach((dino, i) => {
+      const randomNumber = Math.floor(Math.random() * 3);
+      let randomCompare;
+      randomNumber === 0
+        ? (randomCompare = dino.compareWeight(human.weight))
+        : randomNumber === 1
+        ? (randomCompare = dino.compareHeight(human.height))
+        : (randomCompare = dino.compareDiet(human.diet));
+      if (i === 4) dinoHtml += addHumanTile(human);
+      dinoHtml += addDinoTile(dino, randomCompare);
+    });
+
+    addTilesToDom(dinoHtml);
+    removeFormFromScreen();
+  };
+})();
 
 // On button click, prepare and display infographic
 const button = document.getElementById("btn");
